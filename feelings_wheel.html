@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Responsive Feelings Wheel - Fixed Aspect</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+
+    #viewport {
+      width: 90vw; /* Responsive width */
+      /* height set by JS */
+      overflow: hidden;
+      position: relative;
+      margin: 100px auto;
+      background: transparent;
+
+      /* subtle fades */
+      -webkit-mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
+                          linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
+                          linear-gradient(to right, transparent 0%, black 10%);
+      -webkit-mask-composite: destination-in;
+      mask-composite: intersect;
+      mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
+                  linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
+                  linear-gradient(to right, transparent 0%, black 10%);
+    }
+
+    #draggable {
+      position: absolute;
+      transform-origin: center center;
+      cursor: grab;
+      border-radius: 50%;
+      pointer-events: auto;
+      user-select: none;
+      -webkit-user-drag: none;
+      /* width/height set by JS */
+    }
+
+    #draggable img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      pointer-events: none;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="draggable">
+    <img src="https://www.dropbox.com/scl/fi/xdk4rvteap07jxghsciyi/feelings_wheel.png?rlkey=w2j0osf3enytevu771ezm2kj3&st=rjopqgf0&raw=1" alt="Feelings Wheel" />
+  </div>
+</div>
+
+<script>
+(function () {
+  const viewport = document.getElementById("viewport");
+  const draggable = document.getElementById("draggable");
+
+  // Aspect ratio of viewport = height / width = 400/600 = 2/3
+  const aspectRatio = 2 / 3;
+
+  function resize() {
+    const vw = viewport.clientWidth;
+    const vh = vw * aspectRatio;
+    viewport.style.height = vh + "px";
+
+    // Make draggable square: width and height = 2 * viewport width
+    draggable.style.width = (vw * 2) + "px";
+    draggable.style.height = (vw * 2) + "px";
+
+    // Position the wheel so mid right section aligns in viewport
+    draggable.style.top = (-vh) + "px";    // based on viewport height
+    draggable.style.left = (-vw) + "px";   // based on viewport width
+  }
+
+  // Initial resize and listen to window resize
+  window.addEventListener("resize", resize);
+  resize();
+
+  // Rotation logic
+  let active = false;
+  let angle = 0;
+  let rotation = 0;
+  let startAngle = 0;
+  const R2D = 180 / Math.PI;
+  let center = { x: 0, y: 0 };
+
+  function getCenter(el) {
+    const rect = el.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+  }
+
+  draggable.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    center = getCenter(draggable);
+    const dx = e.clientX - center.x;
+    const dy = e.clientY - center.y;
+    startAngle = R2D * Math.atan2(dy, dx);
+    active = true;
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (!active) return;
+    e.preventDefault();
+    const dx = e.clientX - center.x;
+    const dy = e.clientY - center.y;
+    const currentAngle = R2D * Math.atan2(dy, dx);
+    rotation = currentAngle - startAngle;
+    draggable.style.transform = `rotate(${angle + rotation}deg)`;
+  });
+
+  document.addEventListener("mouseup", (e) => {
+    if (!active) return;
+    e.preventDefault();
+    angle += rotation;
+    active = false;
+  });
+})();
+</script>
+
+</body>
+</html>
