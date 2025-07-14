@@ -8,21 +8,27 @@
       margin: 0;
       padding: 0;
       background: transparent;
-      height: 100%;
+      display: block;
+      height: auto;
+      width: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
     }
 
     body {
       display: flex;
       justify-content: center;
       align-items: center;
+      box-sizing: border-box;
     }
 
     #container {
       width: 100%;
       max-width: 600px;
-      aspect-ratio: 2 / 3;
+      height: auto;
       overflow: hidden;
       position: relative;
+      box-sizing: border-box;
     }
 
     #viewport {
