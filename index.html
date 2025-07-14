@@ -2,52 +2,43 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Responsive Feelings Wheel - Fixed Aspect</title>
+  <title>Feelings Wheel - Scroll Override</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
-      background: transparent;
+      background: white;
     }
 
     #viewport {
-      width: 90vw; /* Responsive width */
-      /* height set by JS */
-      overflow: hidden;
+      width: 90vw;
+      aspect-ratio: 2 / 3;
+      margin: 50px auto;
       position: relative;
-      margin: 100px auto;
-      background: transparent;
-
-      /* subtle fades */
-      -webkit-mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
-                          linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
-                          linear-gradient(to right, transparent 0%, black 10%);
-      -webkit-mask-composite: destination-in;
-      mask-composite: intersect;
-      mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
-                  linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
-                  linear-gradient(to right, transparent 0%, black 10%);
+      background: #f8f8f8;
+      overflow: visible;
     }
 
     #draggable {
       position: absolute;
+      width: 200vw;
+      height: 200vw;
+      top: -100vw;
+      left: -55vw;
       transform-origin: center center;
-      cursor: grab;
       border-radius: 50%;
-      pointer-events: auto;
+      touch-action: none; /* key: block scrolling while touching this */
       user-select: none;
-      -webkit-user-drag: none;
-      /* width/height set by JS */
     }
 
     #draggable img {
       width: 100%;
       height: 100%;
       border-radius: 50%;
-      pointer-events: none;
       display: block;
       user-select: none;
       -webkit-user-drag: none;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -61,25 +52,7 @@
 
 <script>
 (function () {
-  const viewport = document.getElementById("viewport");
   const draggable = document.getElementById("draggable");
-
-  const aspectRatio = 2 / 3;
-
-  function resize() {
-    const vw = viewport.clientWidth;
-    const vh = vw * aspectRatio;
-    viewport.style.height = vh + "px";
-
-    draggable.style.width = (vw * 2) + "px";
-    draggable.style.height = (vw * 2) + "px";
-
-    draggable.style.top = (-vh) + "px";
-    draggable.style.left = (-vw) + "px";
-  }
-
-  window.addEventListener("resize", resize);
-  resize();
 
   let active = false;
   let angle = 0;
@@ -119,30 +92,47 @@
     active = false;
   }
 
-  // Touch Start
-draggable.addEventListener("touchstart", (e) => {
-  if (e.touches.length === 1) {
-    const touch = e.touches[0];
-    startRotate(touch.clientX, touch.clientY);
-    e.preventDefault(); // ✅ Prevent page scroll
-  }
-}, { passive: false }); // ✅ Required to allow preventDefault()
+  // Mouse
+  draggable.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    startRotate(e.clientX, e.clientY);
+  });
 
-// Touch Move
-draggable.addEventListener("touchmove", (e) => {
-  if (e.touches.length === 1) {
-    const touch = e.touches[0];
-    moveRotate(touch.clientX, touch.clientY);
-    e.preventDefault(); // ✅ Prevent page scroll
-  }
-}, { passive: false });
+  window.addEventListener("mousemove", (e) => {
+    if (active) {
+      e.preventDefault();
+      moveRotate(e.clientX, e.clientY);
+    }
+  });
 
-// Touch End
-draggable.addEventListener("touchend", (e) => {
-  endRotate();
-  e.preventDefault(); // ✅ (optional for safety)
-}, { passive: false });
+  window.addEventListener("mouseup", (e) => {
+    if (active) {
+      e.preventDefault();
+      endRotate();
+    }
+  });
 
+  // Touch
+  draggable.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      startRotate(touch.clientX, touch.clientY);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  draggable.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      moveRotate(touch.clientX, touch.clientY);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  draggable.addEventListener("touchend", (e) => {
+    endRotate();
+    e.preventDefault();
+  }, { passive: false });
 })();
 </script>
 
