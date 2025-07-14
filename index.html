@@ -119,40 +119,30 @@
     active = false;
   }
 
-  // Mouse support
-  draggable.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    startRotate(e.clientX, e.clientY);
-  });
+  // Touch Start
+draggable.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
+    startRotate(touch.clientX, touch.clientY);
+    e.preventDefault(); // ✅ Prevent page scroll
+  }
+}, { passive: false }); // ✅ Required to allow preventDefault()
 
-  document.addEventListener("mousemove", (e) => {
-    e.preventDefault();
-    moveRotate(e.clientX, e.clientY);
-  });
+// Touch Move
+draggable.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 1) {
+    const touch = e.touches[0];
+    moveRotate(touch.clientX, touch.clientY);
+    e.preventDefault(); // ✅ Prevent page scroll
+  }
+}, { passive: false });
 
-  document.addEventListener("mouseup", (e) => {
-    e.preventDefault();
-    endRotate();
-  });
+// Touch End
+draggable.addEventListener("touchend", (e) => {
+  endRotate();
+  e.preventDefault(); // ✅ (optional for safety)
+}, { passive: false });
 
-  // Touch support
-  draggable.addEventListener("touchstart", (e) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      startRotate(touch.clientX, touch.clientY);
-    }
-  });
-
-  document.addEventListener("touchmove", (e) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      moveRotate(touch.clientX, touch.clientY);
-    }
-  }, { passive: false });
-
-  document.addEventListener("touchend", (e) => {
-    endRotate();
-  });
 })();
 </script>
 
