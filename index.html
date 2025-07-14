@@ -2,23 +2,30 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Feelings Wheel - Android Rotation + Correct Layout</title>
+  <title>Feelings Wheel - Obsidian Compatible</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       background: transparent;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
     #viewport {
-      width: 90vw;
-      /* height will be set by JS based on aspect ratio */
-      overflow: hidden;
+      width: 100%;
+      max-width: 600px; /* Limit it for Obsidian panes */
+      aspect-ratio: 2 / 3;
       position: relative;
-      margin: 100px auto;
+      overflow: hidden;
       background: transparent;
 
-      /* fade edges and clip right half */
+      /* Right-half clipping and fades */
       -webkit-mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
                           linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
                           linear-gradient(to right, transparent 0%, black 10%);
@@ -36,7 +43,7 @@
       border-radius: 50%;
       pointer-events: auto;
       user-select: none;
-      touch-action: none; /* allow custom touch handling */
+      touch-action: none;
     }
 
     #draggable img {
@@ -63,18 +70,16 @@
   const viewport = document.getElementById("viewport");
   const draggable = document.getElementById("draggable");
 
-  const aspectRatio = 2 / 3; // height / width
+  const aspectRatio = 2 / 3;
 
   function resize() {
     const vw = viewport.clientWidth;
     const vh = vw * aspectRatio;
     viewport.style.height = vh + "px";
 
-    // Set draggable size to 2× viewport width
     draggable.style.width = (vw * 2) + "px";
     draggable.style.height = (vw * 2) + "px";
 
-    // Position wheel so that mid-right section shows
     draggable.style.top = (-vh) + "px";
     draggable.style.left = (-vw) + "px";
   }
@@ -121,7 +126,7 @@
     active = false;
   }
 
-  // Mouse events
+  // Mouse
   draggable.addEventListener("mousedown", (e) => {
     e.preventDefault();
     startRotate(e.clientX, e.clientY);
@@ -141,7 +146,7 @@
     }
   });
 
-  // Touch events
+  // Touch
   draggable.addEventListener("touchstart", (e) => {
     if (e.touches.length === 1) {
       const touch = e.touches[0];
