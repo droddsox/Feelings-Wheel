@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Feelings Wheel</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      display: block;
+      height: auto;
+      width: 100%;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    #container {
+      width: 100%;
+      max-width: 600px;
+      height: auto;
+      overflow: hidden;
+      position: relative;
+      box-sizing: border-box;
+    }
+
+    #viewport {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: transparent;
+
+      -webkit-mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
+                          linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
+                          linear-gradient(to right, transparent 0%, black 10%);
+      -webkit-mask-composite: destination-in;
+      mask-composite: intersect;
+      mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
+                  linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
+                  linear-gradient(to right, transparent 0%, black 10%);
+    }
+
+    #draggable {
+      position: absolute;
+      transform-origin: center center;
+      cursor: grab;
+      border-radius: 50%;
+      user-select: none;
+      touch-action: none;
+    }
+
+    #draggable img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="viewport">
+      <div id="draggable">
+        <img src="https://raw.githubusercontent.com/droddsox/Feelings-Wheel/refs/heads/main/feelings_wheel.png" alt="Feelings Wheel" />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const container = document.getElementById("container");
+      const viewport = document.getElementById("viewport");
+      const draggable = document.getElementById("draggable");
+
+      function resize() {
+        const vw = container.clientWidth;
+        const vh = vw * (2 / 3);
+        viewport.style.height = vh + "px";
+
+        draggable.style.width = (vw * 2) + "px";
+        draggable.style.height = (vw * 2) + "px";
+
+        draggable.style.top = (-vh) + "px";
+        draggable.style.left = (-vw) + "px";
+      }
+
+      window.addEventListener("resize", resize);
+      resize();
+
+      let active = false;
+      let angle = 0;
+      let rotation = 0;
+      let startAngle = 0;
+      const R2D = 180 / Math.PI;
+      let center = { x: 0, y: 0 };
+
+      function getCenter(el) {
+        const rect = el.getBoundingClientRect();
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+      }
+
+      function startRotate(clientX, clientY) {
+        center = getCenter(draggable);
+        const dx = clientX - center.x;
+        const dy = clientY - center.y;
+        startAngle = R2D * Math.atan2(dy, dx);
+        active = true;
+      }
+
+      function moveRotate(clientX, clientY) {
+        if (!active) return;
+        const dx = clientX - center.x;
+        const dy = clientY - center.y;
+        const currentAngle = R2D * Math.atan2(dy, dx);
+        rotation = currentAngle - startAngle;
+        draggable.style.transform = `rotate(${angle + rotation}deg)`;
+      }
+
+      function endRotate() {
+        if (!active) return;
+        angle += rotation;
+        active = false;
+      }
+
+      // Mouse events
+      draggable.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        startRotate(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (active) {
+          e.preventDefault();
+          moveRotate(e.clientX, e.clientY);
+        }
+      });
+
+      window.addEventListener("mouseup", () => {
+        endRotate();
+      });
+
+      // Touch events
+      draggable.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          startRotate(touch.clientX, touch.clientY);
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      draggable.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          moveRotate(touch.clientX, touch.clientY);
+          e.preventDefault();
+        }
+      }, { passive: false });
+
+      draggable.addEventListener("touchend", (e) => {
+        endRotate();
+        e.preventDefault();
+      }, { passive: false });
+    })();
+  </script>
+</body>
+</html>
