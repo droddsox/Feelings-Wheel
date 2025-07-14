@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Feelings Wheel - Obsidian Compatible</title>
+  <title>Feelings Wheel</title>
   <style>
     html, body {
       margin: 0;
@@ -17,15 +17,20 @@
       align-items: center;
     }
 
+    #container {
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      position: relative;
+    }
+
     #viewport {
       width: 100%;
-      max-width: 600px; /* Limit it for Obsidian panes */
-      aspect-ratio: 2 / 3;
+      height: 100%;
       position: relative;
-      overflow: hidden;
       background: transparent;
 
-      /* Right-half clipping and fades */
       -webkit-mask-image: radial-gradient(farthest-side at 100% 50%, black 90%, transparent 100%),
                           linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%),
                           linear-gradient(to right, transparent 0%, black 10%);
@@ -41,7 +46,6 @@
       transform-origin: center center;
       cursor: grab;
       border-radius: 50%;
-      pointer-events: auto;
       user-select: none;
       touch-action: none;
     }
@@ -58,117 +62,112 @@
   </style>
 </head>
 <body>
-
-<div id="viewport">
-  <div id="draggable">
-    <img src="https://raw.githubusercontent.com/droddsox/Feelings-Wheel/refs/heads/main/feelings_wheel.png" alt="Feelings Wheel" />
+  <div id="container">
+    <div id="viewport">
+      <div id="draggable">
+        <img src="https://raw.githubusercontent.com/droddsox/Feelings-Wheel/refs/heads/main/feelings_wheel.png" alt="Feelings Wheel" />
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-(function () {
-  const viewport = document.getElementById("viewport");
-  const draggable = document.getElementById("draggable");
+  <script>
+    (function () {
+      const container = document.getElementById("container");
+      const viewport = document.getElementById("viewport");
+      const draggable = document.getElementById("draggable");
 
-  const aspectRatio = 2 / 3;
+      function resize() {
+        const vw = container.clientWidth;
+        const vh = vw * (2 / 3);
+        viewport.style.height = vh + "px";
 
-  function resize() {
-    const vw = viewport.clientWidth;
-    const vh = vw * aspectRatio;
-    viewport.style.height = vh + "px";
+        draggable.style.width = (vw * 2) + "px";
+        draggable.style.height = (vw * 2) + "px";
 
-    draggable.style.width = (vw * 2) + "px";
-    draggable.style.height = (vw * 2) + "px";
+        draggable.style.top = (-vh) + "px";
+        draggable.style.left = (-vw) + "px";
+      }
 
-    draggable.style.top = (-vh) + "px";
-    draggable.style.left = (-vw) + "px";
-  }
+      window.addEventListener("resize", resize);
+      resize();
 
-  window.addEventListener("resize", resize);
-  resize();
+      let active = false;
+      let angle = 0;
+      let rotation = 0;
+      let startAngle = 0;
+      const R2D = 180 / Math.PI;
+      let center = { x: 0, y: 0 };
 
-  // Rotation logic
-  let active = false;
-  let angle = 0;
-  let rotation = 0;
-  let startAngle = 0;
-  const R2D = 180 / Math.PI;
-  let center = { x: 0, y: 0 };
+      function getCenter(el) {
+        const rect = el.getBoundingClientRect();
+        return {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        };
+      }
 
-  function getCenter(el) {
-    const rect = el.getBoundingClientRect();
-    return {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2,
-    };
-  }
+      function startRotate(clientX, clientY) {
+        center = getCenter(draggable);
+        const dx = clientX - center.x;
+        const dy = clientY - center.y;
+        startAngle = R2D * Math.atan2(dy, dx);
+        active = true;
+      }
 
-  function startRotate(clientX, clientY) {
-    center = getCenter(draggable);
-    const dx = clientX - center.x;
-    const dy = clientY - center.y;
-    startAngle = R2D * Math.atan2(dy, dx);
-    active = true;
-  }
+      function moveRotate(clientX, clientY) {
+        if (!active) return;
+        const dx = clientX - center.x;
+        const dy = clientY - center.y;
+        const currentAngle = R2D * Math.atan2(dy, dx);
+        rotation = currentAngle - startAngle;
+        draggable.style.transform = `rotate(${angle + rotation}deg)`;
+      }
 
-  function moveRotate(clientX, clientY) {
-    if (!active) return;
-    const dx = clientX - center.x;
-    const dy = clientY - center.y;
-    const currentAngle = R2D * Math.atan2(dy, dx);
-    rotation = currentAngle - startAngle;
-    draggable.style.transform = `rotate(${angle + rotation}deg)`;
-  }
+      function endRotate() {
+        if (!active) return;
+        angle += rotation;
+        active = false;
+      }
 
-  function endRotate() {
-    if (!active) return;
-    angle += rotation;
-    active = false;
-  }
+      // Mouse events
+      draggable.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        startRotate(e.clientX, e.clientY);
+      });
 
-  // Mouse
-  draggable.addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    startRotate(e.clientX, e.clientY);
-  });
+      window.addEventListener("mousemove", (e) => {
+        if (active) {
+          e.preventDefault();
+          moveRotate(e.clientX, e.clientY);
+        }
+      });
 
-  window.addEventListener("mousemove", (e) => {
-    if (active) {
-      e.preventDefault();
-      moveRotate(e.clientX, e.clientY);
-    }
-  });
+      window.addEventListener("mouseup", () => {
+        endRotate();
+      });
 
-  window.addEventListener("mouseup", (e) => {
-    if (active) {
-      e.preventDefault();
-      endRotate();
-    }
-  });
+      // Touch events
+      draggable.addEventListener("touchstart", (e) => {
+        if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          startRotate(touch.clientX, touch.clientY);
+          e.preventDefault();
+        }
+      }, { passive: false });
 
-  // Touch
-  draggable.addEventListener("touchstart", (e) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      startRotate(touch.clientX, touch.clientY);
-      e.preventDefault();
-    }
-  }, { passive: false });
+      draggable.addEventListener("touchmove", (e) => {
+        if (e.touches.length === 1) {
+          const touch = e.touches[0];
+          moveRotate(touch.clientX, touch.clientY);
+          e.preventDefault();
+        }
+      }, { passive: false });
 
-  draggable.addEventListener("touchmove", (e) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      moveRotate(touch.clientX, touch.clientY);
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  draggable.addEventListener("touchend", (e) => {
-    endRotate();
-    e.preventDefault();
-  }, { passive: false });
-})();
-</script>
-
+      draggable.addEventListener("touchend", (e) => {
+        endRotate();
+        e.preventDefault();
+      }, { passive: false });
+    })();
+  </script>
 </body>
 </html>
