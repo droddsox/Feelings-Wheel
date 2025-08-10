@@ -4,6 +4,21 @@
   <meta charset="UTF-8" />
   <title>Feelings Wheel</title>
   <style>
+      /* force transparent in all color schemes */
+  html, body {
+    background: transparent !important;
+  }
+  /* if the page wraps content in a div, also force it */
+  #root, #app, .container, .main {
+    background: transparent !important;
+  }
+
+  /* if the page reacts to prefers-color-scheme, explicitly override dark-mode */
+  @media (prefers-color-scheme: dark) {
+    html, body {
+      background: transparent !important;
+    }
+  }
     html, body, #container, #viewport {
       margin: 0;
       padding: 0;
@@ -225,3 +240,4 @@
   </script>
 </body>
 </html>
+
