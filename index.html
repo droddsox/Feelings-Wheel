@@ -70,7 +70,7 @@
       display: block;
       background: transparent !important;
     }
-    /* nice visual feedback while dragging */
+
     #draggable.dragging { cursor: grabbing; }
   </style>
 </head>
@@ -86,13 +86,12 @@
   <script>
     (function () {
       const container = document.getElementById("container");
-      const viewport = document.getElementById("viewport");
       const draggable = document.getElementById("draggable");
 
       function resize() {
         const vw = container.clientWidth;
         const vh = vw * (2 / 3);
-        viewport.style.height = vh + "px";
+        container.style.height = vh + "px";
 
         draggable.style.width = (vw * 2) + "px";
         draggable.style.height = (vw * 2) + "px";
@@ -105,8 +104,8 @@
       resize();
 
       let active = false;
-      let angle = 0;           // current rendered base angle (degrees)
-      let rotation = 0;       // during drag: delta from start
+      let angle = 0;
+      let rotation = 0;
       let startAngle = 0;
       const R2D = 180 / Math.PI;
       let center = { x: 0, y: 0 };
@@ -116,10 +115,10 @@
       let angularVelocity = 0;
       let spinning = false;
 
-      // Smooth scroll rotation variables
+      // Smooth scroll rotation
       let targetAngle = 0;
-      const SCROLL_SPEED = 0.03; // smaller = slower per scroll tick
-      const EASE = 0.08;         // easing factor for smoothness (smaller = smoother/slower)
+      const SCROLL_SPEED = 0.03; // slower per scroll tick
+      const EASE = 0.08; // easing factor
 
       function getCenter(el) {
         const rect = el.getBoundingClientRect();
@@ -130,9 +129,7 @@
       }
 
       function startRotate(clientX, clientY) {
-        if (spinning) {
-          spinning = false; // stop current spin if user starts dragging
-        }
+        if (spinning) spinning = false;
         center = getCenter(draggable);
         const dx = clientX - center.x;
         const dy = clientY - center.y;
@@ -154,17 +151,12 @@
         const deltaTime = now - lastTime;
         const deltaAngle = currentAngle - lastAngle;
 
-        // degrees per second
         angularVelocity = deltaAngle / (deltaTime / 1000 || 1);
-
         lastAngle = currentAngle;
         lastTime = now;
 
-        // immediate visual update (drag should feel responsive)
         const rendered = angle + rotation;
         draggable.style.transform = `rotate(${rendered}deg)`;
-
-        // keep the scroll/target system in sync so easing continues smoothly when released
         targetAngle = rendered;
       }
 
@@ -172,36 +164,28 @@
         if (!active) return;
         angle += rotation;
         rotation = 0;
-        targetAngle = angle; // sync scroll + drag
+        targetAngle = angle;
         active = false;
         draggable.classList.remove('dragging');
         spinWithInertia();
       }
 
       function spinWithInertia() {
-        // If angularVelocity is near zero, don't start spin
         if (Math.abs(angularVelocity) < 0.5) {
           angularVelocity = 0;
           spinning = false;
           return;
         }
-
         const friction = 0.985;
         spinning = true;
 
         function step() {
           if (!spinning) return;
-
           angularVelocity *= friction;
-          // angularVelocity is degrees/second, step at ~60fps
           angle += angularVelocity * (1 / 60);
-
-          // keep targetAngle synced so scroll easing doesn't fight the spin
           targetAngle = angle;
-
           draggable.style.transform = `rotate(${angle}deg)`;
 
-          // stop condition
           if (Math.abs(angularVelocity) < 0.01) {
             spinning = false;
             angularVelocity = 0;
@@ -209,78 +193,45 @@
           }
           requestAnimationFrame(step);
         }
-
         requestAnimationFrame(step);
       }
 
-      // Mouse events
-      draggable.addEventListener("mousedown", (e) => {
-        e.preventDefault();
-        startRotate(e.clientX, e.clientY);
-      });
+      // Drag events
+      draggable.addEventListener("mousedown", (e) => { e.preventDefault(); startRotate(e.clientX, e.clientY); });
+      window.addEventListener("mousemove", (e) => { if(active){ e.preventDefault(); moveRotate(e.clientX, e.clientY); } });
+      window.addEventListener("mouseup", endRotate);
 
-      window.addEventListener("mousemove", (e) => {
-        if (active) {
-          e.preventDefault();
-          moveRotate(e.clientX, e.clientY);
-        }
-      });
-
-      window.addEventListener("mouseup", () => {
-        endRotate();
-      });
-
-      // Touch events
       draggable.addEventListener("touchstart", (e) => {
-        if (e.touches.length === 1) {
-          const touch = e.touches[0];
-          startRotate(touch.clientX, touch.clientY);
-          e.preventDefault();
-        }
+        if (e.touches.length === 1) { startRotate(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
       }, { passive: false });
 
       draggable.addEventListener("touchmove", (e) => {
-        if (e.touches.length === 1) {
-          const touch = e.touches[0];
-          moveRotate(touch.clientX, touch.clientY);
-          e.preventDefault();
-        }
+        if (e.touches.length === 1) { moveRotate(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
       }, { passive: false });
 
       window.addEventListener("touchend", (e) => {
-        if (active) {
-          endRotate();
-          e.preventDefault();
-        }
+        if (active) { endRotate(); e.preventDefault(); }
       }, { passive: false });
 
-      // Scroll-to-rotate (smooth easing)
-      window.addEventListener("wheel", (e) => {
+      // Smooth scroll inside container for Homarr
+      container.addEventListener("wheel", (e) => {
         e.preventDefault();
-        // stop any inertia spinning so wheel has control
+        e.stopPropagation(); // stop dashboard scrolling
         spinning = false;
         angularVelocity = 0;
-
-        // slower, smoother scroll per user's request
         targetAngle += e.deltaY * SCROLL_SPEED;
       }, { passive: false });
 
-      // Animation loop for smooth scroll rotation
-      function animateScrollRotation() {
-        // Only ease when not actively dragging and not handled by inertia spin
+      // Animation loop
+      function animate() {
         if (!active && !spinning) {
-          // ease angle toward targetAngle
           angle += (targetAngle - angle) * EASE;
-          // small threshold snap to avoid perpetual tiny differences
           if (Math.abs(targetAngle - angle) < 0.001) angle = targetAngle;
           draggable.style.transform = `rotate(${angle}deg)`;
-        } else {
-          // while active or spinning, keep targetAngle synced to current 'angle' so future easing is smooth
-          // (moveRotate and spinWithInertia already update targetAngle when appropriate)
         }
-        requestAnimationFrame(animateScrollRotation);
+        requestAnimationFrame(animate);
       }
-      animateScrollRotation();
+      animate();
 
     })();
   </script>
