@@ -52,9 +52,12 @@
       cursor: grab;
       border-radius: 50%;
       user-select: none;
+      -webkit-user-drag: none;
       touch-action: none !important;
-      background: transparent !important;
+      outline: none;
     }
+
+    #draggable.dragging { cursor: grabbing; }
 
     #draggable img {
       width: 100%;
@@ -63,17 +66,15 @@
       pointer-events: none;
       user-select: none;
       -webkit-user-drag: none;
-      display: block;
-      background: transparent !important;
+      touch-action: none !important;
     }
-
-    #draggable.dragging { cursor: grabbing; }
   </style>
 </head>
 <body>
   <div id="container">
     <div id="viewport">
-      <div id="draggable">
+      <!-- Make draggable non-focusable and non-draggable to prevent screen jumps -->
+      <div id="draggable" draggable="false" tabindex="-1">
         <img src="https://raw.githubusercontent.com/droddsox/Feelings-Wheel/refs/heads/main/feelings_wheel.png" alt="Feelings Wheel">
       </div>
     </div>
@@ -91,7 +92,6 @@
 
         draggable.style.width = (vw*2) + "px";
         draggable.style.height = (vw*2) + "px";
-
         draggable.style.top = (-vh) + "px";
         draggable.style.left = (-vw) + "px";
       }
@@ -192,7 +192,7 @@
 
       window.addEventListener("touchend", e=>{ if(active){ endRotate(); e.preventDefault(); e.stopPropagation(); } }, { passive:false });
 
-      // Prevent scrolling in Obsidian on all touches inside container
+      // Stop Obsidian or parent webview from jumping on touch
       ['touchstart','touchmove','touchend','touchcancel'].forEach(ev=>{
         container.addEventListener(ev, e=>{
           if(e.touches.length>0 || ev==='touchend'){ e.preventDefault(); e.stopPropagation(); }
@@ -218,6 +218,7 @@
         requestAnimationFrame(animate);
       }
       animate();
+
     })();
   </script>
 </body>
