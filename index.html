@@ -217,12 +217,19 @@
         }
       }, { passive: false });
 
-      // Global touchend fix to prevent Android screen jump
       window.addEventListener("touchend", (e) => {
         if (active) {
           endRotate();
           e.preventDefault();
         }
+      }, { passive: false });
+
+      // Scroll-to-rotate
+      window.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const scrollSpeed = 0.3; // adjust sensitivity
+        angle += e.deltaY * scrollSpeed;
+        draggable.style.transform = `rotate(${angle}deg)`;
       }, { passive: false });
     })();
   </script>
