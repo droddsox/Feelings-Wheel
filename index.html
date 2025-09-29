@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Feelings Wheel</title>
   <style>
-    html, body, #container, #viewport, #draggable {
+    html, body, #container, #viewport, #draggable, #overlay {
       margin: 0;
       padding: 0;
       width: 100%;
@@ -46,18 +46,29 @@
                   linear-gradient(to right, transparent 0%, black 10%);
     }
 
+    #overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2; /* above wheel to capture events */
+      touch-action: none !important;
+      cursor: grab; /* hand cursor on hover */
+    }
+
+    #overlay.dragging {
+      cursor: grabbing; /* while dragging */
+    }
+
     #draggable {
       position: absolute;
       transform-origin: center center;
-      cursor: grab;
       border-radius: 50%;
       user-select: none;
       -webkit-user-drag: none;
-      touch-action: none !important;
       outline: none;
+      z-index: 1;
+      draggable: false;
+      tabindex: -1;
     }
-
-    #draggable.dragging { cursor: grabbing; }
 
     #draggable img {
       width: 100%;
@@ -73,8 +84,8 @@
 <body>
   <div id="container">
     <div id="viewport">
-      <!-- Make draggable non-focusable and non-draggable to prevent screen jumps -->
-      <div id="draggable" draggable="false" tabindex="-1">
+      <div id="overlay"></div>
+      <div id="draggable">
         <img src="https://raw.githubusercontent.com/droddsox/Feelings-Wheel/refs/heads/main/feelings_wheel.png" alt="Feelings Wheel">
       </div>
     </div>
@@ -83,6 +94,7 @@
   <script>
     (function() {
       const container = document.getElementById("container");
+      const overlay = document.getElementById("overlay");
       const draggable = document.getElementById("draggable");
 
       function resize() {
@@ -128,7 +140,7 @@
         lastAngle = startAngle;
         lastTime = performance.now();
         active = true;
-        draggable.classList.add('dragging');
+        overlay.classList.add('dragging'); // hand to grabbing
       }
 
       function moveRotate(clientX, clientY){
@@ -157,7 +169,7 @@
         rotation = 0;
         targetAngle = angle;
         active=false;
-        draggable.classList.remove('dragging');
+        overlay.classList.remove('dragging');
         spinWithInertia();
       }
 
@@ -177,22 +189,22 @@
         requestAnimationFrame(step);
       }
 
-      // Drag events
-      draggable.addEventListener("mousedown", e=>{ e.preventDefault(); startRotate(e.clientX,e.clientY); });
-      window.addEventListener("mousemove", e=>{ if(active){ e.preventDefault(); moveRotate(e.clientX,e.clientY); } });
-      window.addEventListener("mouseup", endRotate);
+      // Drag events on overlay
+      overlay.addEventListener("mousedown", e=>{ e.preventDefault(); startRotate(e.clientX,e.clientY); });
+      overlay.addEventListener("mousemove", e=>{ if(active){ e.preventDefault(); moveRotate(e.clientX,e.clientY); } });
+      overlay.addEventListener("mouseup", endRotate);
 
-      draggable.addEventListener("touchstart", e=>{
+      overlay.addEventListener("touchstart", e=>{
         if(e.touches.length===1){ startRotate(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); e.stopPropagation(); }
       }, { passive:false });
 
-      draggable.addEventListener("touchmove", e=>{
+      overlay.addEventListener("touchmove", e=>{
         if(e.touches.length===1){ moveRotate(e.touches[0].clientX,e.touches[0].clientY); e.preventDefault(); e.stopPropagation(); }
       }, { passive:false });
 
-      window.addEventListener("touchend", e=>{ if(active){ endRotate(); e.preventDefault(); e.stopPropagation(); } }, { passive:false });
+      overlay.addEventListener("touchend", e=>{ if(active){ endRotate(); e.preventDefault(); e.stopPropagation(); } }, { passive:false });
 
-      // Stop Obsidian or parent webview from jumping on touch
+      // Prevent any parent scroll/jump
       ['touchstart','touchmove','touchend','touchcancel'].forEach(ev=>{
         container.addEventListener(ev, e=>{
           if(e.touches.length>0 || ev==='touchend'){ e.preventDefault(); e.stopPropagation(); }
@@ -200,7 +212,7 @@
       });
 
       // Scroll wheel rotation
-      container.addEventListener("wheel", e=>{
+      overlay.addEventListener("wheel", e=>{
         e.preventDefault();
         e.stopPropagation();
         spinning=false;
